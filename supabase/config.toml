@@ -1,0 +1,55 @@
+# A string that is supposed to be a URL but does not have to be.
+project_id = "runner"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:8081"
+additional_redirect_urls = ["exp://localhost:8081"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+# Local test OTP — kod: 123456 (SMS provider kerak, lekin yuborilmaydi)
+[auth.sms.test_otp]
+"998901234567" = "123456"
+"998900000001" = "123456"
+"998900000002" = "123456"
+
+# Dummy provider — test_otp ishlashi uchun kerak (haqiqiy SMS yubormaydi)
+[auth.sms.textlocal]
+enabled = true
+sender = "Runner"
+api_key = "local-dev-dummy"
+
+[realtime]
+enabled = true
+
+[edge_runtime]
+enabled = true

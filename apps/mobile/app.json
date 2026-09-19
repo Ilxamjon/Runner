@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Runner",
+    "slug": "runner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "runner",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F766E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "uz.runner.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Runner yaqin micro-vazifalarni ko'rsatish uchun joylashuvingizdan foydalanadi. / Runner использует ваше местоположение для показа ближайших заданий.",
+        "NSPhotoLibraryUsageDescription": "Runner ish va vazifalarni tushuntirish uchun faqat rasm yuklashga ruxsat beradi. / Runner разрешает загружать только изображения для описания работ и заданий.",
+        "NSCameraUsageDescription": "Runner vazifa yoki tasdiqlash uchun rasm olishga ruxsat so'raydi. / Runner запрашивает доступ к камере для фото заданий и верификации."
+      }
+    },
+    "android": {
+      "package": "uz.runner.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0F766E",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Runner yaqin vazifalarni ko'rsatish uchun joylashuvingizdan foydalanadi."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Runner ish va vazifalar uchun faqat rasm yuklashga ruxsat beradi.",
+          "cameraPermission": false
+        }
+      ],
+      "expo-localization"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
+    },
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

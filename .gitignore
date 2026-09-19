@@ -1,0 +1,28 @@
+node_modules/
+.expo/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# IDE
+.idea/
+.vscode/
+.cursor/hooks/tmp/
+
+# Build / native
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+android/
+ios/
+
+# Push workflows after granting gh 'workflow' scope
+.github/workflows/

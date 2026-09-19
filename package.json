@@ -1,0 +1,22 @@
+{
+  "name": "runner",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace=apps/mobile",
+    "mobile:android": "npm run android --workspace=apps/mobile",
+    "mobile:ios": "npm run ios --workspace=apps/mobile",
+    "db:reset": "npx supabase db reset",
+    "db:migrate": "npx supabase migration up",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "load:smoke": "node scripts/load-smoke.mjs",
+    "ci": "npm run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

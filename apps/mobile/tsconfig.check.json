@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/lib/**/*.ts",
+    "src/modules/**/*.ts",
+    "src/stores/**/*.ts",
+    "src/hooks/useLocale.ts",
+    "src/hooks/useLocalizedName.ts",
+    "src/hooks/useNearbyTasks.ts",
+    "src/hooks/useRunnerAvailability.ts",
+    "src/hooks/useRunnerLocationTracking.ts",
+    "src/i18n/**/*.ts",
+    "src/theme/**/*.ts",
+    "src/providers/**/*.tsx"
+  ],
+  "exclude": ["app/**"]
+}
