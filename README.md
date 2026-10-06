@@ -34,6 +34,7 @@ npm run mobile
 - [Trust](docs/TRUST.md)
 - [Admin KPI](docs/ADMIN.md)
 - [Launch checklist](docs/LAUNCH.md)
+- [Staging setup](docs/STAGING.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Modules (status)
