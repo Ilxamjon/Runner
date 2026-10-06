@@ -1,0 +1,53 @@
+name: Safe dependency autofix
+
+on:
+  push:
+    branches:
+      - security/production-hardening-phase1
+    paths:
+      - .github/workflows/dependency-autofix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/production-hardening-phase1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply non-breaking security fixes
+        run: npm audit fix
+
+      - name: Verify typecheck
+        run: npm run typecheck
+
+      - name: Verify production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: Commit safe dependency fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json apps/mobile/package.json apps/mobile/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No non-breaking dependency fixes available"
+          else
+            git commit -m "deps: apply non-breaking security fixes"
+            git push origin HEAD:security/production-hardening-phase1
+          fi
