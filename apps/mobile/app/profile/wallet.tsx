@@ -1,18 +1,13 @@
-import { useState } from 'react';
 import {
-  Alert,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/AuthProvider';
 import {
-  DEMO_DEPOSIT_AMOUNTS,
-  depositToWallet,
   fetchWallet,
   fetchWalletLedger,
 } from '@/modules/escrow/api';
@@ -22,8 +17,6 @@ import { colors, spacing } from '@/theme';
 export default function WalletScreen() {
   const { t } = useTranslation();
   const { session } = useAuth();
-  const queryClient = useQueryClient();
-  const [depositing, setDepositing] = useState(false);
 
   const { data: wallet, isLoading } = useQuery({
     queryKey: ['wallet', session?.user.id],
@@ -37,19 +30,6 @@ export default function WalletScreen() {
     enabled: !!wallet?.id,
   });
 
-  const handleDeposit = async (amount: number) => {
-    setDepositing(true);
-    try {
-      await depositToWallet(amount);
-      await queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      await refetchLedger();
-      Alert.alert(t('wallet.depositSuccess'));
-    } catch {
-      Alert.alert(t('common.error'));
-    } finally {
-      setDepositing(false);
-    }
-  };
 
   if (isLoading) return <LoadingScreen />;
 
@@ -63,18 +43,9 @@ export default function WalletScreen() {
         <Text style={styles.demoNote}>{t('wallet.demoNote')}</Text>
       </View>
 
-      <Text style={styles.sectionTitle}>{t('wallet.deposit')}</Text>
-      <View style={styles.depositRow}>
-        {DEMO_DEPOSIT_AMOUNTS.map((amount) => (
-          <Pressable
-            key={amount}
-            style={styles.depositChip}
-            disabled={depositing}
-            onPress={() => void handleDeposit(amount)}
-          >
-            <Text style={styles.depositChipText}>+{amount.toLocaleString()}</Text>
-          </Pressable>
-        ))}
+      <View style={styles.paymentNotice}>
+        <Text style={styles.paymentNoticeTitle}>{t('wallet.deposit')}</Text>
+        <Text style={styles.paymentNoticeText}>{t('wallet.paymentSetupPending')}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>{t('wallet.history')}</Text>
@@ -121,16 +92,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: spacing.sm,
   },
-  depositRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  depositChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  paymentNotice: {
+    padding: spacing.md,
     borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
+    marginBottom: spacing.lg,
   },
-  depositChipText: { color: colors.primary, fontWeight: '600', fontSize: 13 },
+  paymentNoticeTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+  paymentNoticeText: { fontSize: 13, color: colors.textSecondary, marginTop: spacing.xs, lineHeight: 18 },
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
   ledgerItem: {
     flexDirection: 'row',
