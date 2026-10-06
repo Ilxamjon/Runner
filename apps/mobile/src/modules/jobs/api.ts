@@ -260,10 +260,10 @@ export async function fetchMyApplication(vacancyId: string): Promise<Application
 }
 
 export async function withdrawApplication(applicationId: string) {
-  const { error } = await supabase
-    .from('applications')
-    .update({ status: 'withdrawn' })
-    .eq('id', applicationId);
+  const { error } = await supabase.rpc('transition_application_status', {
+    p_application_id: applicationId,
+    p_new_status: 'withdrawn',
+  });
 
   if (error) throw error;
 }
@@ -287,10 +287,10 @@ export async function fetchVacancyApplications(vacancyId: string): Promise<Appli
 }
 
 export async function updateApplicationStatus(applicationId: string, status: ApplicationStatus) {
-  const { error } = await supabase
-    .from('applications')
-    .update({ status })
-    .eq('id', applicationId);
+  const { error } = await supabase.rpc('transition_application_status', {
+    p_application_id: applicationId,
+    p_new_status: status,
+  });
 
   if (error) throw error;
 }
