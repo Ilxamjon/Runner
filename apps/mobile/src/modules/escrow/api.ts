@@ -29,17 +29,6 @@ export async function fetchWalletLedger(walletId: string): Promise<WalletLedgerE
   return (data ?? []) as WalletLedgerEntry[];
 }
 
-/** Demo top-up — production uses payment webhook Edge Function */
-export async function depositToWallet(amount: number, description?: string): Promise<Wallet> {
-  const { data, error } = await supabase.rpc('wallet_deposit', {
-    p_amount: amount,
-    p_description: description ?? 'Demo deposit',
-  });
-
-  if (error) throw error;
-  return data as Wallet;
-}
-
 export async function holdEscrowForTask(
   taskId: string,
   idempotencyKey?: string,
@@ -110,4 +99,3 @@ export function isInsufficientBalanceError(err: unknown): boolean {
   return msg.includes('INSUFFICIENT_BALANCE');
 }
 
-export const DEMO_DEPOSIT_AMOUNTS = [50_000, 100_000, 500_000, 1_000_000] as const;
