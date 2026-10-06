@@ -77,7 +77,7 @@ export default function TaskDetailScreen() {
       void queryClient.invalidateQueries({ queryKey: ['task', id] });
       void queryClient.invalidateQueries({ queryKey: ['escrow', id] });
     });
-    return () => channel.unsubscribe();
+    return () => { void channel.unsubscribe(); };
   }, [id, queryClient]);
 
   const isEmployer = task?.employer_id === session?.user.id;
@@ -85,7 +85,7 @@ export default function TaskDetailScreen() {
   const isAssignedRunner = task?.assignment?.runner_id === session?.user.id;
   const escrowHeld = escrow?.status === 'held';
 
-  const runAction = async (fn: () => Promise<void>, successMsg: string) => {
+  const runAction = async (fn: () => Promise<unknown>, successMsg: string) => {
     setActing(true);
     try {
       await fn();

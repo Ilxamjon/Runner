@@ -25,7 +25,7 @@ export default function MessagesScreen() {
     const channel = subscribeToConversationList(session.user.id, () => {
       void queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
-    return () => channel.unsubscribe();
+    return () => { void channel.unsubscribe(); };
   }, [session?.user.id, queryClient]);
 
   if (isLoading) return <LoadingScreen />;
