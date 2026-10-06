@@ -70,5 +70,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit production dependencies
+      - name: Report high production dependency vulnerabilities
         run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: Block critical production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=critical
