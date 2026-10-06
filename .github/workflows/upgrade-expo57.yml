@@ -1,0 +1,58 @@
+name: Upgrade Expo SDK 57
+
+on:
+  push:
+    branches:
+      - security/production-hardening-phase1
+    paths:
+      - .github/workflows/upgrade-expo57.yml
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/production-hardening-phase1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install current dependencies
+        run: npm ci
+
+      - name: Upgrade Expo SDK and compatible packages
+        working-directory: apps/mobile
+        run: npx expo install expo@^57.0.0 --fix
+
+      - name: Sync workspace lockfile
+        run: npm install --package-lock-only
+
+      - name: Apply non-breaking audit fixes
+        run: npm audit fix --package-lock-only || true
+
+      - name: Verify install and typecheck
+        run: |
+          npm ci
+          npm run typecheck
+
+      - name: Commit dependency upgrade
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json apps/mobile/package.json apps/mobile/package-lock.json
+          if git diff --cached --quiet; then
+            echo "No dependency changes to commit"
+          else
+            git commit -m "deps: upgrade mobile app to Expo SDK 57"
+            git push origin HEAD:security/production-hardening-phase1
+          fi
