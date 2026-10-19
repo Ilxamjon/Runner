@@ -11,7 +11,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Constants from 'expo-constants';
 
 type DemoJob = {
   id: string;
