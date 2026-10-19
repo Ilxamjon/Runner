@@ -23,6 +23,3 @@ supabase/.temp
 *.mobileprovision
 android/
 ios/
-
-# Push workflows after granting gh 'workflow' scope
-.github/workflows/

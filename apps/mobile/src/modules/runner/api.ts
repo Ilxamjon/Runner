@@ -138,32 +138,19 @@ export function getTaskImageUrl(storagePath: string): string {
 }
 
 export async function acceptTask(taskId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  const { data, error } = await supabase.rpc('accept_micro_task', {
+    p_micro_task_id: taskId,
+  });
 
-  const { data: assignment, error: assignError } = await supabase
-    .from('task_assignments')
-    .insert({ task_id: taskId, runner_id: user.id })
-    .select()
-    .single();
-
-  if (assignError) throw assignError;
-
-  const { error: updateError } = await supabase
-    .from('micro_tasks')
-    .update({ status: 'accepted', accepted_at: new Date().toISOString() })
-    .eq('id', taskId)
-    .eq('status', 'open');
-
-  if (updateError) throw updateError;
-  return assignment;
+  if (error) throw error;
+  return data;
 }
 
-export async function updateTaskStatus(taskId: string, status: TaskStatus, extra?: Record<string, string>) {
-  const { error } = await supabase
-    .from('micro_tasks')
-    .update({ status, ...extra })
-    .eq('id', taskId);
+export async function updateTaskStatus(taskId: string, status: TaskStatus) {
+  const { error } = await supabase.rpc('transition_micro_task_status', {
+    p_micro_task_id: taskId,
+    p_new_status: status,
+  });
 
   if (error) throw error;
 }
@@ -173,11 +160,7 @@ export async function startTask(taskId: string) {
 }
 
 export async function completeTask(taskId: string) {
-  await updateTaskStatus(taskId, 'completed', { completed_at: new Date().toISOString() });
-}
-
-export async function verifyTask(taskId: string) {
-  await updateTaskStatus(taskId, 'verified', { verified_at: new Date().toISOString() });
+  await updateTaskStatus(taskId, 'completed');
 }
 
 export async function cancelTask(taskId: string) {

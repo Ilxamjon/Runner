@@ -23,7 +23,7 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
 
 export async function updateProfile(
   userId: string,
-  updates: Partial<Pick<Profile, 'full_name' | 'bio' | 'roles' | 'locale' | 'onboarding_completed'>>,
+  updates: Partial<Pick<Profile, 'full_name' | 'bio' | 'locale'>>,
 ) {
   const { data, error } = await supabase
     .from('profiles')
@@ -45,11 +45,9 @@ export async function ensureDefaultRoles(userId: string, fullName?: string): Pro
   let next = profile;
 
   if (missing.length > 0) {
-    const roles = Array.from(
-      new Set([...profile.roles.filter((r) => r !== 'admin'), ...DEFAULT_USER_ROLES]),
-    ) as UserRole[];
-    if (profile.roles.includes('admin')) roles.push('admin');
-    next = await updateProfile(userId, { roles });
+    const { data, error } = await supabase.rpc('ensure_default_roles');
+    if (error) throw error;
+    next = data as Profile;
   }
 
   const name = fullName?.trim() || profile.full_name || 'User';
@@ -72,13 +70,16 @@ export async function completeOnboarding(userId: string, data: OnboardingData, l
   const fullName = data.fullName.trim();
   const companyName = data.companyName?.trim() || fullName;
 
-  const profile = await updateProfile(userId, {
-    full_name: fullName,
-    bio: data.bio?.trim() || null,
-    roles: DEFAULT_USER_ROLES,
-    locale: locale as Profile['locale'],
-    onboarding_completed: true,
-  });
+  const { data: profileData, error: profileError } = await supabase.rpc(
+    'complete_profile_onboarding',
+    {
+      p_full_name: fullName,
+      p_bio: data.bio?.trim() || null,
+      p_locale: locale as Profile['locale'],
+    },
+  );
+  if (profileError) throw profileError;
+  const profile = profileData as Profile;
 
   await upsertCandidateProfile(userId, {
     headline: data.headline?.trim() || null,

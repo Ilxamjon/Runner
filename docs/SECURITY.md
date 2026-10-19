@@ -2,58 +2,53 @@
 
 ## Authentication
 
-- Supabase Auth with phone OTP (SMS provider required in production).
-- JWT stored in Expo SecureStore (not AsyncStorage).
+- Supabase Auth with phone OTP (a production SMS provider must be configured).
+- JWT stored in Expo SecureStore, not AsyncStorage.
 - Session auto-refresh enabled.
 
 ## Row Level Security (RLS)
 
-All public tables have RLS enabled. Key principles:
+All public tables should have RLS enabled. Verify the actual policies in migrations and staging tests before production.
 
-| Resource | Read | Write |
-|----------|------|-------|
-| Taxonomy (regions, industries) | Public | Admin only (service role) |
-| Profiles | Active users | Own profile only |
-| Vacancies | Published + own drafts | Employer owns listing |
-| Applications | Candidate + vacancy employer | Candidate creates; both update status |
-| Micro-tasks | Open tasks + parties involved | Employer creates; parties update |
-| Task assignments | Runner + employer | Runner accepts open tasks |
-| Wallets / escrow | Own records | **Edge Functions only** (service role) |
+| Resource | Intended read access | Intended write access |
+|----------|----------------------|-----------------------|
+| Taxonomy (regions, industries) | Public | Admin/service role only |
+| Profiles | Active users | Own profile only; protected fields server-controlled |
+| Vacancies | Published listings + own drafts | Employer owns listing |
+| Applications | Candidate + vacancy employer | State transitions through validated database functions |
+| Micro-tasks | Open tasks + parties involved | Employer creates; workflow functions validate transitions |
+| Task assignments | Runner + employer | Atomic accept/transition functions |
+| Wallets / escrow | Own records | Server/database functions only |
 | Messages | Conversation participants | Participants send |
-| Reviews | Public read | Reviewer creates (once per context) |
-| Verifications | Own records | User submits |
+| Reviews | Public read | Eligible reviewer, once per context |
+| Verifications | Own records | User submits; approval fields server-controlled |
 
 ## Storage Security
 
-| Bucket | Public Read | Upload | MIME Types |
-|--------|-------------|--------|------------|
-| `avatars` | Yes | Own folder `{user_id}/*` | image/jpeg, png, webp |
-| `job-images` | Yes | Own folder `{user_id}/*` | image/jpeg, png, webp |
-| `task-images` | Yes | Own folder `{user_id}/*` | image/jpeg, png, webp |
-| `verification-docs` | No | Own folder `{user_id}/*` | image/jpeg, png, webp |
+| Bucket | Public read | Upload policy |
+|--------|-------------|---------------|
+| `avatars` | Yes | Own folder `{user_id}/*` |
+| `job-images` | Yes | Own folder `{user_id}/*` |
+| `task-images` | Yes | Own folder `{user_id}/*` |
+| `verification-docs` | No | Own folder `{user_id}/*` |
 
-**No video MIME types are permitted.** File size limits enforced at bucket level (2–10 MB).
+Confirm MIME type and size restrictions in the deployed Supabase project, not only in source migrations.
 
-## Escrow Security
+## Payments and escrow — production blocker
 
-- Client cannot directly mutate `escrow_transactions` or `wallet_ledger`.
-- All financial state changes go through Edge Functions with:
-  - JWT validation
-  - Idempotency keys
-  - Ownership checks (payer = task employer)
-- Payment webhooks verified with provider signature.
+- Client must not directly mutate `escrow_transactions` or `wallet_ledger`.
+- Financial operations must use atomic database functions with ownership checks and idempotency.
+- **Real Click, Payme and Uzum deposits are not production-ready.** The current webhook deliberately rejects all requests unless explicit non-production test mode is enabled.
+- A shared secret header is not a replacement for each provider's official callback authentication, transaction lifecycle, amount/order validation, replay protection and refund/reversal handling.
+- Do not set `PAYMENT_WEBHOOK_MODE=test` in production. Do not accept real money until native provider adapters and security regression tests are implemented.
 
-## Realtime Channels
+## Client checklist
 
-- Subscribe to `micro_tasks` for map updates (filtered by bbox in client).
-- Subscribe to `messages` per conversation (participant check via RLS).
-- Never expose service role key in mobile app.
+- [ ] `EXPO_PUBLIC_SUPABASE_ANON_KEY` only; never bundle the service-role key.
+- [ ] Image picker restricted to images.
+- [ ] Location permission requested only when needed.
+- [ ] Rate limiting and abuse controls tested on task creation and messaging.
+- [ ] RLS negative tests cover cross-user reads/writes and protected profile fields.
+- [ ] Payment, escrow and status-transition regression tests pass.
 
-## Client Checklist
-
-- [ ] `EXPO_PUBLIC_SUPABASE_ANON_KEY` only (never service role)
-- [ ] Image picker restricted to `mediaTypes: ['images']`
-- [ ] Location permission requested only when needed (Runner tab)
-- [ ] Rate limiting on task creation (Edge Function, Phase 4)
-
-See `supabase/migrations/00002_rls_policies.sql` and `00003_storage_policies.sql` for full policy definitions.
+See `supabase/migrations/00002_rls_policies.sql` and `00003_storage_policies.sql`. A passing typecheck or migration reset is not a substitute for authorization tests against a staging project.

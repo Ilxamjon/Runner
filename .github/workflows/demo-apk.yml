@@ -1,0 +1,61 @@
+name: Build Runner Demo APK
+
+on:
+  push:
+    branches:
+      - security/production-hardening-phase1
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-demo-apk:
+    name: Build offline demo APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Expo Babel preset missing from the current lockfile
+        run: npm install --no-save --package-lock=false babel-preset-expo@~57.0.12
+
+      - name: Generate Android project
+        working-directory: apps/mobile
+        env:
+          APP_ENV: demo
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+
+      - name: Upload demo APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-demo-apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -44,10 +44,8 @@ export async function verifyPhoneOtp(phone: string, token: string) {
   if (error) throw error;
 
   if (data.user) {
-    await supabase
-      .from('profiles')
-      .update({ phone: normalized, phone_verified: true })
-      .eq('id', data.user.id);
+    const { error: syncError } = await supabase.rpc('sync_verified_phone');
+    if (syncError) throw syncError;
   }
 
   return data.session;

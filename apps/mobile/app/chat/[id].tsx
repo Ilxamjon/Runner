@@ -44,7 +44,7 @@ export default function ConversationScreen() {
       void markConversationRead(id);
       void queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
-    return () => channel.unsubscribe();
+    return () => { void channel.unsubscribe(); };
   }, [id, refetch, queryClient]);
 
   useEffect(() => {
