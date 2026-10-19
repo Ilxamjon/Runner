@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Expo Babel preset missing from the current lockfile
+        run: npm install --no-save --package-lock=false babel-preset-expo@~57.0.12
+
       - name: Generate Android project
         working-directory: apps/mobile
         env:
