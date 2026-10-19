@@ -11,6 +11,15 @@
         "buildType": "apk"
       }
     },
+    "demo": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "demo"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
