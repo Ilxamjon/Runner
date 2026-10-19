@@ -1,11 +1,11 @@
 // Deploy: supabase functions deploy process-payment-webhook
-// Interim hardened webhook adapter.
 //
-// IMPORTANT:
-// This endpoint now fails closed when PAYMENT_WEBHOOK_SECRET is missing and
-// requires an idempotency key. It is safe for controlled integration testing,
-// but each real provider (Click/Payme/Uzum) must still get its native signature
-// verification algorithm before public production launch.
+// SECURITY BOUNDARY:
+// Click/Payme/Uzum deposits must remain disabled until each provider's native
+// callback protocol, signature/authentication, transaction lifecycle and replay
+// handling are implemented and tested. A shared secret is NOT a substitute for
+// those provider protocols. This handler only permits explicit non-production
+// test deposits.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -22,6 +22,11 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -32,14 +37,25 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const appEnv = Deno.env.get('APP_ENV') ?? 'production';
+    const webhookMode = Deno.env.get('PAYMENT_WEBHOOK_MODE') ?? 'disabled';
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const webhookSecret = Deno.env.get('PAYMENT_WEBHOOK_SECRET');
 
-    // Fail closed: a missing production secret must never disable auth.
+    // Never let missing configuration silently disable authentication.
     if (!supabaseUrl || !serviceRoleKey || !webhookSecret) {
       console.error('Payment webhook is not configured securely');
       return json({ error: 'Webhook unavailable' }, 503);
+    }
+
+    // This endpoint does not yet implement Click/Payme/Uzum's official
+    // provider-specific callback protocols. Reject those providers explicitly.
+    if (
+      webhookMode !== 'test' ||
+      appEnv === 'production'
+    ) {
+      return json({ error: 'Payment provider integration is not enabled' }, 503);
     }
 
     const signature = req.headers.get('x-provider-signature');
@@ -55,36 +71,27 @@ Deno.serve(async (req) => {
       external_ref,
       idempotency_key,
     } = body as {
-      user_id?: string;
-      amount?: number;
-      provider?: string;
-      external_ref?: string;
-      idempotency_key?: string;
+      user_id?: unknown;
+      amount?: unknown;
+      provider?: unknown;
+      external_ref?: unknown;
+      idempotency_key?: unknown;
     };
 
     if (
-      !user_id ||
+      !isUuid(user_id) ||
+      typeof amount !== 'number' ||
       !Number.isSafeInteger(amount) ||
-      (amount ?? 0) <= 0 ||
-      !provider ||
-      !idempotency_key
+      amount <= 0 ||
+      amount > 2_000_000_000 ||
+      provider !== 'test' ||
+      typeof idempotency_key !== 'string' ||
+      idempotency_key.trim().length < 8 ||
+      idempotency_key.length > 128 ||
+      (external_ref !== undefined && external_ref !== null &&
+        (typeof external_ref !== 'string' || external_ref.length > 200))
     ) {
-      return json(
-        {
-          error:
-            'Invalid payload: user_id, positive integer amount, provider and idempotency_key are required',
-        },
-        400,
-      );
-    }
-
-    // Keep the provider name intentionally constrained until native provider
-    // adapters are implemented.
-    const allowedProviders = new Set(['click', 'payme', 'uzum', 'test']);
-    const normalizedProvider = provider.trim().toLowerCase();
-
-    if (!allowedProviders.has(normalizedProvider)) {
-      return json({ error: 'Unsupported provider' }, 400);
+      return json({ error: 'Invalid test payment payload' }, 400);
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -96,11 +103,13 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase.rpc('provider_wallet_deposit', {
       p_user_id: user_id,
       p_amount: amount,
-      p_provider: normalizedProvider,
+      p_provider: 'test',
       p_external_ref: external_ref ?? null,
-      p_idempotency_key: idempotency_key,
+      p_idempotency_key: idempotency_key.trim(),
       p_metadata: {
         received_at: new Date().toISOString(),
+        environment: appEnv,
+        mode: 'test',
       },
     });
 
