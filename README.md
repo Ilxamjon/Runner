@@ -27,6 +27,7 @@ Open the repository's Actions tab and download the `runner-demo-apk` artifact on
 
 - [Nukus-first startup validation plan](docs/STARTUP_PLAN.md)
 - [Nukus pilot checklist](docs/PILOT_CHECKLIST.md)
+- [Customer interview guide and outreach scripts](docs/INTERVIEW_GUIDE.md)
 - [Launch readiness checklist](docs/LAUNCH.md)
 - [Staging setup](docs/STAGING.md)
 - [Production audit findings](docs/PRODUCTION_AUDIT.md)
